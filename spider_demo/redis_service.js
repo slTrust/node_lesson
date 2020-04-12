@@ -19,7 +19,7 @@ async function generateAcfunIdsToRedis(min,max){
   for(let i = min; i < max ; i++){
     var arr = new Array(10000)
     for(let j = 0; j < 10000 ; j++){
-      arr.push(i * 10000 + j);
+      arr[i * 10000 + j] = i * 10000 + j;
     }
     await redis.sadd(ACFUN_ID_SET_REDIS_KEY, ...arr);
   }

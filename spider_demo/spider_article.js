@@ -3,8 +3,18 @@ const cherrio = require('cheerio');
 
 const RedisService = require('./redis_service');
 const { MongoClient } = require('mongodb')
+const moment = require('moment');
 let client;
 let db;
+
+
+class Tag {
+  constructor(name, value, score){
+    this.name = name; // 标签 如 漫画 
+    this.value = value; // 对应的值
+    this.scroe = score;
+  }
+}
 
 async function spideringArticles(count){
   const ids = await RedisService.getRandomAcfunIds(count);
@@ -36,7 +46,6 @@ async function getStringArticle(id){
   if(!db){
     db = client.db('acfun');
   }
-
   const url = `http://www.acfun.cn/a/ac${id}`;
   const res = await axios.get(url)
     .catch(e=>{
@@ -53,10 +62,6 @@ async function getStringArticle(id){
   const articleContentFlg = $('.article-content');
   if(!articleContentFlg){
       return;
-      // do nothing and return 
-      // if 404 do nothing
-      // if deleted from acfun, do nothind
-      // if is video, put id back to pool
   }else{
       // add to already-got set
       await RedisService.markArticleIdSucceed(id);
@@ -70,32 +75,54 @@ async function getStringArticle(id){
   const articleContent = $('.article-content');
   const doms = articleContent.children();
 
+  const title = $('.art-title').children('.art-title-head').children('.caption').text();
+  let orginCreateAtStr = $('.up-time').text();
+  if(orginCreateAtStr.indexOf('小时')!=-1){
+    var hour = parseInt(orginCreateAtStr);
+    orginCreateAtStr =  Date.now().valueOf() - hour*60*60*1000;
+  }else if(orginCreateAtStr.indexOf('分钟')!=-1){
+    var minutes = parseInt(orginCreateAtStr);
+    orginCreateAtStr =  Date.now().valueOf() - minutes*60*1000;
+  }
+  const orginCreateAt = moment(orginCreateAtStr).valueOf(); 
+  const tags = [];
+  const articleCategoryAndTagNames = $('.article-parent').children('a')
+  const bottomTags = $('#bd_tag.tag > span');
+
+  //面包屑a标签  文章 > 漫画文学 > 漫画
+  tags.push(new Tag('ARTICLE_CATEGORY',articleCategoryAndTagNames.eq(1).text(),1));
+  tags.push(new Tag('ARTICLE_TAG_NAME',articleCategoryAndTagNames.eq(2).text(),1));
+  tags.push(new Tag('ARTICLE_TAG_SYS',articleCategoryAndTagNames.eq(2).text(),1));
+
+  bottomTags.each((idx,span)=>{
+    tags.push(new Tag('ARTICLE_TAG_USER',$(span).text(),1));
+  })
+  console.log(title, orginCreateAt,tags)
   
   const content = getTextOrImg(doms,[]);
 
   // console.log(content)
-
-  
-  await db.collection('articles')
+  const article = {
+    acfunid: id,
+    content: content ,
+    articleContentHtml: articleContentHTML,
+    createAt: Date.now().valueOf(),
+    orginCreateAt: orginCreateAt ,// 文章创建时间
+    title: title, //文章标题
+    tags: tags,
+  }
+  console.log(article);
+  const result = await db.collection('articles')
     .findOneAndUpdate({
       acfunid:id
     },
-    {$set:{
-      acfunid: id,
-      content: content ,
-      articleContentHtml: articleContentHTML,
-      createAt: Date.now().valueOf()
-    }},
+    {$set:article},
     {
       upsert: true, 
       returnNewValue: true
-    })
-      .then(r=>{
-         console.log("Updated");
-      })
-      .catch(e=>{
-           throw e;
-      })
+    });
+  console.log('updated')
+  return result;
 
   function getTextOrImg(doms,arr){
     doms.each(function(i,ele){
@@ -140,6 +167,7 @@ async function getStringArticle(id){
     return arr;
   }
 }
+
 
 module.exports = {
     spideringArticles,
