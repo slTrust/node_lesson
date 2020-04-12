@@ -1,7 +1,7 @@
 const RedisService = require('./redis_service');
 const Spider = require('./spider_article');
 
-switch(process.argv[2]){
+switch(process.argv[2] || process.env.NODE_ARGV_2){
   case 'generate_ids':
     RedisService.generateAcfunIdsToRedis(process.argv[3], process.argv[4])
       .then(r=>{
