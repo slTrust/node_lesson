@@ -64,3 +64,4 @@
 - 011 在 `/root/node_demo` 里运行 `NODE_ARGV_2=start_getting_articles pm2 start spider.js -i 0`
     - `-i 0 `代表根据你机器的核心数开启进程
 - 012 查看日志`pm2 logs 0`
+
