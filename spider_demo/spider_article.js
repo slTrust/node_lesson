@@ -1,5 +1,6 @@
 const axios = require('axios');
 const cherrio = require('cheerio');
+const jieba = require('nodejieba')
 
 const RedisService = require('./redis_service');
 const { MongoClient } = require('mongodb')
@@ -76,6 +77,8 @@ async function getStringArticle(id){
   const doms = articleContent.children();
 
   const title = $('.art-title').children('.art-title-head').children('.caption').text();
+  const titleTags = jieba.extract(title, 5);
+  // console.log(titleTags);
   let orginCreateAtStr = $('.up-time').text();
   if(orginCreateAtStr.indexOf('小时')!=-1){
     var hour = parseInt(orginCreateAtStr);
@@ -97,7 +100,7 @@ async function getStringArticle(id){
   bottomTags.each((idx,span)=>{
     tags.push(new Tag('ARTICLE_TAG_USER',$(span).text(),1));
   })
-  console.log(title, orginCreateAt,tags)
+  // console.log(title, orginCreateAt,tags)
   
   const content = getTextOrImg(doms,[]);
 
@@ -111,7 +114,7 @@ async function getStringArticle(id){
     title: title, //文章标题
     tags: tags,
   }
-  console.log(article);
+  // console.log(article);
   const result = await db.collection('articles')
     .findOneAndUpdate({
       acfunid:id
