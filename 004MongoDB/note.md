@@ -196,6 +196,14 @@ db.users.findOneAndUpdate({name:'hjx'},{$set:{age:11}},{upsert:true})
 db.users.deleteOne({name:'aa',city:{$exists:false}})
 ```
 
+### 字段重命名
+
+- https://blog.csdn.net/shellching/article/details/7651721
+
+```
+db.test.update({}, {$rename : {"abc" : "def"}}, false, true)
+```
+
 ### 聚合操作
 
 ```

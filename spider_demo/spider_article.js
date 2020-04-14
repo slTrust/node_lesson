@@ -106,11 +106,11 @@ async function getStringArticle(id){
 
   // console.log(content)
   const article = {
-    acfunid: id,
+    acfunId: id,
     content: content ,
     articleContentHtml: articleContentHTML,
-    createAt: Date.now().valueOf(),
-    orginCreateAt: orginCreateAt ,// 文章创建时间
+    createdAt: Date.now().valueOf(),
+    originCreatedAt: orginCreateAt ,// 文章创建时间
     title: title, //文章标题
     tags: tags,
   }
