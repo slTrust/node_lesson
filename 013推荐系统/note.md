@@ -29,7 +29,7 @@
     - 进入目录 cd mongo_data
     ```
     docker pull mongo:3.6.15
-    docker run -p 27017:27017 -v $PWD/db:/data/db -d mongo:3.6.15
+    docker run --restart=always itd -p 27017:27017 -v $PWD/db:/data/db -d mongo:3.6.15
     docker ps -a 查看 mongo id编号
     # 进入 容器内部
     docker exec -it id编号 bash 
@@ -40,7 +40,7 @@
     ```
     docker pull redis:4.0.6
 
-    docker run -itd --name redis-test -p 6379:6379 redis:4.0.6
+    docker run --restart=always -itd -p 6379:6379 -v $PWD/db:/data redis:4.0.6
 
     # 进入 redis内部
     docker exec -it id号 bash
