@@ -64,4 +64,7 @@
 - 011 在 `/root/node_demo` 里运行 `NODE_ARGV_2=start_getting_articles pm2 start spider.js -i 0`
     - `-i 0 `代表根据你机器的核心数开启进程
 - 012 查看日志`pm2 logs 0`
-
+- 013 解决 安装nodejieba 报错问题
+    - `npm i -g node-pre-gyp`
+    - `npm i -g node-gyp`
+    - [node依赖的gcc版本过低](https://blog.csdn.net/u010757785/article/details/77446849)
