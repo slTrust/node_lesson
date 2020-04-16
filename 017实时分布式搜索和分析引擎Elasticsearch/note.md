@@ -1,0 +1,350 @@
+### ElasticSearch (弹性搜索)
+
+不管你的项目是多大多小都可以通过它提供一个良好的搜索
+
+- [文档中文](https://www.elastic.co/cn/elasticsearch)
+- [阮一峰：全文搜索引擎 Elasticsearch 入门教程](https://www.ruanyifeng.com/blog/2017/08/elasticsearch.html)
+- [我使用5.5版本](https://www.elastic.co/guide/en/elasticsearch/reference/5.5/docker.html)
+
+1. 安装和启动
+2. 对索引、文档进行管理
+3. 搜索文档
+4. 搜索算法的入门讲解
+5. 使用node.js客户端进行交互
+
+> 下载5.5版
+
+- https://www.elastic.co/guide/en/elasticsearch/reference/5.5/zip-targz.html
+- 解压后进入目录 config 修改 elasticsearch.yml 修改 `network.host: 127.0.0.1` 并放开注释
+- `bin/elasticsearch` 就可以启动了，启动后 会提示你去 http://127.0.0.1:9200/ 
+- 访问 http://127.0.0.1:9200/ 得到如下内容，就代表它启动成功了
+    ```
+    {
+    name: "pwZK6u4",
+    cluster_name: "elasticsearch",
+    cluster_uuid: "1oXCrYXDQa2oMALVU5D__w",
+    version: {
+        number: "5.5.3",
+        build_hash: "9305a5e",
+        build_date: "2017-09-07T15:56:59.599Z",
+        build_snapshot: false,
+        lucene_version: "6.6.0"
+    },
+     tagline: "You Know, for Search"
+    }
+    ```
+- 安装分词插件 `bin/elasticsearch-plugin install analysis-smartcn`
+
+### ElasticSearch 使用
+
+- restful 风格
+
+> 001 `bin/elasticsearch` 启动后 访问 http://localhost:9200/
+
+返回的是服务的相关信息
+
+> 002 ElasticSearch资源的形式
+
+```
+http://localhost:9200/index/type/contentId
+
+索引/类型/内容id
+```
+
+**如果你没创建任何资源**  访问 http://localhost:9200/user 会得到一个 404 ,表示这个 index 不存在
+
+> 003 新建一个 资源 
+
+- 使用 put 方法 http://localhost:9200/user 就会创建一个索引
+```
+{
+    "acknowledged": true,
+    "shards_acknowledged": true
+}
+```
+
+> 004 post 和 put 的区别
+
+**假设存在一个 user 的资源**
+
+- get http://localhost:9200/user 获取 user列表
+- post http://localhost:9200/user 创建一个新的用户,表示用系统生成的id作为 user的id
+- put http://localhost:9200/user/id 以当前的url去创建一个用户 往往此时要指定一个 id
+
+> 005 get 获取刚才创建的索引 http://localhost:9200/user
+
+返回如下信息
+
+```
+{
+    "abc": {
+        "aliases": {},
+        "mappings": {},
+        "settings": {
+            "index": {
+                "creation_date": "1586953235749",
+                "number_of_shards": "5",
+                "number_of_replicas": "1",
+                "uuid": "_ZrzMkriSGqXiHv8LiAhYg", // 可以理解跟 mongoDB 的 objectId 组成一样
+                "version": {
+                    "created": "5050399"
+                },
+                "provided_name": "user"
+            }
+        }
+    }
+}
+```
+
+> 006 根据type  获取 资源 
+
+type 参数 `man/women/other` 代表类型
+
+- http://localhost:9200/user/man
+- http://localhost:9200/user/women
+- http://localhost:9200/user/other
+
+```
+{
+    "error": {
+        "root_cause": [
+            {
+                "type": "illegal_argument_exception",
+                "reason": "No endpoint or operation is available at [man]"
+            }
+        ],
+        "type": "illegal_argument_exception",
+        "reason": "No endpoint or operation is available at [man]"
+    },
+    "status": 400
+}
+```
+
+> 007 根据 名字 创建资源
+
+- PUT 
+- http://localhost:9200/user/man/ann
+- 请求体添加 json格式的内容
+```
+{
+	"name":"ann",
+	"age":18
+}
+```
+
+得到响应
+
+```
+{
+    "_index": "user",
+    "_type": "man",
+    "_id": "ann",
+    "_version": 1,
+    "result": "created",
+    "_shards": {
+        "total": 2,
+        "successful": 1,
+        "failed": 0
+    },
+    "created": true
+}
+```
+
+此时通过 get http://localhost:9200/user/man/ann 就能获取这个创建的资源
+
+> 008 put 更新 刚刚创建的资源
+
+- http://localhost:9200/user/man/ann
+- 请求体内容
+```
+{
+	"name":"ann",
+	"age":18,
+	"hobbies":["video games","swimming","video"]
+}
+```
+
+响应内容
+
+```
+{
+    "_index": "user",
+    "_type": "man",
+    "_id": "ann",
+    "_version": 2,
+    "result": "updated",
+    "_shards": {
+        "total": 2,
+        "successful": 1,
+        "failed": 0
+    },
+    "created": false
+}
+```
+
+> 009 删除 delete
+
+- delete http://localhost:9200/user/man/ann
+```
+{
+    "found": true,
+    "_index": "user",
+    "_type": "man",
+    "_id": "ann",
+    "_version": 3,
+    "result": "deleted",
+    "_shards": {
+        "total": 2,
+        "successful": 1,
+        "failed": 0
+    }
+}
+```
+
+- get http://localhost:9200/user/man/ann
+
+```
+{
+    "_index": "user",
+    "_type": "man",
+    "_id": "ann",
+    "found": false
+}
+```
+
+### es的查询
+
+“_” 下划线作为保留字有一些操作
+
+`_search` 代表查询
+
+- http://localhost:9200/_search 在整个 es 里搜索内容
+- http://localhost:9200/user/_search 在 user这个 index 下进行搜索
+- http://localhost:9200/user/man/_search 在 user 这个 index下的 type = man的类型下搜索 
+
+```
+{
+	"took": 5,
+	"timed_out": false,
+	"_shards": {
+		"total": 5,
+		"successful": 5,
+		"failed": 0
+	},
+	"hits": {
+		"total": 2,
+		"max_score": 1.0,
+		"hits": [
+			{
+				"_index": "user",
+				"_type": "man",
+				"_id": "ann",
+				"_score": 1.0,
+				"_source": {
+					"name": "ann",
+					"age": 18,
+					"hobbies": [
+						"video games",
+						"swimming",
+						"video"
+					]
+				}
+			},
+			{
+				"_index": "user",
+				"_type": "man",
+				"_id": "hjx",
+				"_score": 1.0,
+				"_source": {
+					"name": "hjx",
+					"age": 8,
+					"hobbies": [
+						"web",
+						"worker"
+					]
+				}
+			}
+		]
+	}
+}
+```
+
+> 筛选条件参数`q=key:value`
+
+- http://localhost:9200/user/man/_search?q=name:ann 
+
+> es里 get 可以支持 body参数 要传递为 json格式， 直接用post 也可以
+
+- 刚才的 get http://localhost:9200/user/man/_search?q=name:ann 
+- **这种方式是为了解决 get请求参数 无法嵌套太深的问题的妥协**
+- get/post http://localhost:9200/user/_search
+- body体里
+
+```
+{
+    "query":{
+        "match":{
+            "name":"ann"
+        }
+    }
+}
+```
+
+**为什么get 可以发送 body呢？**
+
+- 最新的3.3协议里说：请求体跟 method 本身没关系，如果你的服务器要去处理它也没问题
+- 但是会又一个限制，(你用postman get body是被忽略的，你要么使用其他第三方工具要么就使用折中的 post方式) **es 是会处理 body 的不管你是不是get**
+
+### 详解 返回内容的各个字段含义
+
+- get http://localhost:9200/user/man/_search
+
+```
+{
+	"took": 3,
+	"timed_out": false,
+	"_shards": {
+		"total": 5,
+		"successful": 5,
+		"failed": 0
+	},
+	"hits": {
+		"total": 2,
+		"max_score": 1.0,
+		"hits": [
+			{
+				"_index": "user", // 索引
+				"_type": "man",
+				"_id": "ann",
+				"_score": 1.0,
+				"_source": {
+					"name": "ann",
+					"age": 18,
+					"hobbies": [
+						"video games",
+						"swimming",
+						"video"
+					]
+				}
+			},
+			{
+				"_index": "user",
+				"_type": "man",
+				"_id": "hjx",
+				"_score": 1.0,
+				"_source": {
+					"name": "hjx",
+					"age": 8,
+					"hobbies": [
+						"web",
+						"worker"
+					]
+				}
+			}
+		]
+	}
+}
+```
+
+
+
