@@ -88,9 +88,19 @@ npm i
 
 > 008 准备es
 
-安装 jdk8 下载对应版本es
+- [安装 jdk8](https://blog.csdn.net/pang_ping/article/details/80570011)
+- [下载对应版本es](https://www.elastic.co/guide/en/elasticsearch/reference/5.5/zip-targz.html)
+- 开启 es可能会报错 内存不够
+- 参考 https://blog.51cto.com/zhuyuanpo/1908365 修改内存
+- [阿里云1G内存开启 es](https://learnku.com/laravel/t/22414)
+- es不让root用户启动解决办法
+    - https://www.cnblogs.com/gcgc/p/10297563.html
+    - https://blog.csdn.net/ooyhao/article/details/84704151
+    - 添加新用户 找不到 main问题
+        - https://segmentfault.com/a/1190000019413175?utm_source=coffeephp.com
 
 ```
+
 运行 bin/elasticsearch 默认开启在 9200 端口
 ```
 
