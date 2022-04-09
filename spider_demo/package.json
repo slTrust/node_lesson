@@ -13,7 +13,7 @@
     "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
     "ioredis": "^4.16.2",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "mongodb": "^3.5.5",
     "nodejieba": "^2.2.5"
   }
